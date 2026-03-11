@@ -86,6 +86,21 @@ app.post(`${baseUrl}/events`, (req, res) => {
   return res.status(201).json(newEvent);
 });
 
+app.get(`${baseUrl}/events/:eventId`, (req, res) => {
+  const eventId = Number(req.params.eventId);
+
+  if (!Number.isInteger(eventId)) {
+    return res.status(400).json({ message: "Event id must be valid integer" });
+  }
+
+  const event = events.find((e) => e.id === eventId);
+  if (!event) {
+    return res.status(404).json({ message: "Event not found" });
+  }
+
+  const attendeeCount = attendees.filter((a) => a.eventIds.includes(eventId)).length;
+  return res.status(200).json({ ...event, attendeeCount });
+});
 
 //partially update an event
 app.patch(`${baseUrl}/events/:eventId`, (req, res) => {
