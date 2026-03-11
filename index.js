@@ -32,8 +32,7 @@ app.use((req, res, next) => {
 
 /* Initial Data */
 import { events, attendees } from "./data/initialData.js";
-import { nextEventId, nextAttendeeId } from "./data/initialData.js";
-
+import { getNextEventId, getNextAttendeeId } from "./data/initialData.js";
 /* --------------------------
 
       EVENTS ENDPOINTS     
