@@ -1,6 +1,6 @@
 /* --------------------------
 
-   INITIAL EXPRESS CONFIG  
+   INITIAL EXPRESS CONFIG
    (Middleware, CORS, JSON)
 
 -------------------------- */
@@ -35,39 +35,39 @@ import { events, attendees, getNextEventId, getNextAttendeeId } from "./data/ini
 
 /* --------------------------
 
-      EVENTS ENDPOINTS     
+      EVENTS ENDPOINTS
 
 -------------------------- */
 
 const baseUrl = `${apiPath}${version}`;
 
-//Get all events
+// Get all events
 
 app.get(`${baseUrl}/events`, (req, res) => {
   return res.status(200).json(events);
 });
 
-//Create an event
+// Create an event
 
 app.post(`${baseUrl}/events`, (req, res) => {
-  let {name, location, date} = req.body;
+  let { name, location, date } = req.body;
 
   if (name === undefined || location === undefined || date === undefined ||
-      typeof name != "string" || typeof location !== "string" || typeof date !== "string") {
-    return res.status(400).json({message: "name, location and date are required strings."});
-    }
-  
+      typeof name !== "string" || typeof location !== "string" || typeof date !== "string") {
+    return res.status(400).json({ message: "name, location and date are required strings." });
+  }
+
   name = name.trim();
   location = location.trim();
   date = date.trim();
 
   if (!name || !location || !date) {
-    return res.status(400).json({message: "name, location, and date must be non-empty." });
+    return res.status(400).json({ message: "name, location, and date must be non-empty." });
   }
 
   const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
   if (!dateRegex.test(date)) {
-    return res.status(400).json({message: "date must be in format YYYY-MM-DD."});
+    return res.status(400).json({ message: "date must be in format YYYY-MM-DD." });
   }
 
   const duplicate = events.find((e) =>
@@ -77,10 +77,10 @@ app.post(`${baseUrl}/events`, (req, res) => {
   );
 
   if (duplicate) {
-    return res.status(400).json({message: "an event with the same name location and date already exists." });
+    return res.status(400).json({ message: "an event with the same name location and date already exists." });
   }
 
-  const newEvent = {id: getNextEventId(), name, location, date };
+  const newEvent = { id: getNextEventId(), name, location, date };
   events.push(newEvent);
 
   return res.status(201).json(newEvent);
