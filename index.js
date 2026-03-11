@@ -31,7 +31,7 @@ app.use((req, res, next) => {
 });
 
 /* Initial Data */
-import { events, attendees } from "./data/initialData.js";
+import { events, attendees, getNextEventId } from "./data/initialData.js";
 import { nextEventId, nextAttendeeId } from "./data/initialData.js";
 
 /* --------------------------
@@ -42,40 +42,54 @@ import { nextEventId, nextAttendeeId } from "./data/initialData.js";
 
 const baseUrl = `${apiPath}${version}`;
 
+//Get all events
+
 app.get(`${baseUrl}/events`, (req, res) => {
-  const allowedQueryParams = ['Name', 'Location'];
-  const queryKeys = Object.keys(req.query);
-
-  const hasInvalidQuery = queryKeys.some(
-    (key) => !allowedQueryParams.includes(key)
-  );
-
-  if (hasInvalidQuery) {
-    return res.status(400).json({
-      message: "Invalid query parameter provided"
-    });
-  }
-
-  let filteredEvents = events;
-
-  if (req.query.name) {
-    const nameFilter = req.query.name.toLocaleLowerCase();
-    filteredEvents = filteredEvents.filter((event) =>
-      event.name.toLocaleLowerCase().includes(nameFilter)
-    );
-  }
-
-  if (req.query.location) {
-    const locationFilter = req.query.location.toLocaleLowerCase();
-    filteredEvents = filteredEvents.filter((event) =>
-      event.location.toLocaleLowerCase().includes(locationFilter)
-    );
-  }
-
-  return res.status(200).json(filteredEvents)
+  return res.status(200).json(events);
 });
 
-app.get(`${baseUrl}/events/eventId`, (req, res) => {
+//Create an event
+
+app.post(`${baseUrl}/events`, (req, res) => {
+  let {name, location, date} = req.body;
+
+  if (name === undefined || location === undefined || date === undefined ||
+      typeof name != "string" || typeof location !== "string" || typeof date !== "string") {
+    return res.status(400).json({message: "name, location and date are required strings."});
+    }
+  
+  name = name.trim();
+  location = location.trim();
+  date = date.trim();
+
+  if (!name || !location || !date) {
+    return res.status(400).json({message: "name, location, and date must be non-empty." });
+  }
+
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+  if (!dateRegex.test(date)) {
+    return res.status(400).json({message: "date must be in format YYYY-MM-DD."});
+  }
+
+  const duplicate = events.find((e) =>
+    e.name.toLowerCase() === name.toLowerCase() &&
+    e.location.toLowerCase() === location.toLowerCase() &&
+    e.date === date
+  );
+
+  if (duplicate) {
+    return res.status(400).json({message: "an event with the same name location and date already exists." });
+  }
+
+  const newEvent = {id: getNextEventId(), name, location, date };
+  events.push(newEvent);
+
+  return res.status(201).json(newEvent);
+});
+
+
+//partially update an event
+app.patch(`${baseUrl}/events/:eventId`, (req, res) => {
   const eventId = Number(req.params.eventId);
 
   if (!Number.isInteger(eventId)) {
