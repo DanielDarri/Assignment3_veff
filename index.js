@@ -196,6 +196,67 @@ app.get(`${baseUrl}/attendees`, (req, res) => {
   return res.status(200).json(attendees);
 });
 
+// Create an attendee
+app.post(`${baseUrl}/attendees`, (req, res) => {
+  let { name, email } = req.body;
+
+  if (name === undefined || email === undefined) {
+    return res.status(400).json({ message: "name and email are required" });
+  }
+
+  if (typeof name !== "string" || typeof email !== "string") {
+    return res.status(400).json({ message: "name and email must be strings" });
+  }
+
+  name = name.trim();
+  email = email.trim();
+
+  if (!name || !email) {
+    return res.status(400).json({ message: "name and email must be non-empty" });
+  }
+
+  if (!email.includes("@")) {
+    return res.status(400).json({ message: "email must contain @" });
+  }
+
+  const duplicate = attendees.find(
+    (a) => a.email.toLowerCase() === email.toLowerCase()
+  );
+  if (duplicate) {
+    return res.status(400).json({ message: "an attendee with that email already exists" });
+  }
+
+  const newAtt = { id: getNextAttendeeId(), name, email, eventIds: [] };
+  attendees.push(newAtt);
+  return res.status(201).json(newAtt);
+});
+
+// Register an attendee for an event
+app.post(`${baseUrl}/attendees/:attendeeId/events/:eventId`, (req, res) => {
+  const attendeeId = Number(req.params.attendeeId);
+  const eventId = Number(req.params.eventId);
+
+  if (!Number.isInteger(attendeeId) || !Number.isInteger(eventId)) {
+    return res.status(400).json({ message: "attendeeId and eventId must be integers" });
+  }
+
+  const attendee = attendees.find((a) => a.id === attendeeId);
+  if (!attendee) {
+    return res.status(404).json({ message: "Attendee not found" });
+  }
+  const event = events.find((e) => e.id === eventId);
+  if (!event) {
+    return res.status(404).json({ message: "Event not found" });
+  }
+
+  if (attendee.eventIds.includes(eventId)) {
+    return res.status(400).json({ message: "Attendee already registered for event" });
+  }
+
+  attendee.eventIds.push(eventId);
+  return res.status(200).json(attendee);
+});
+
 /* --------------------------
 
       SERVER INITIALIZATION  
