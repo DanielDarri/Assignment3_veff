@@ -53,9 +53,10 @@ const attendees = [
 let nextEventId = 5;
 let nextAttendeeId = 5;
 
+export const getNextEventId = () => nextEventId++;
+export const getNextAttendeeId = () => nextAttendeeId++;
+
 export {
   events,
   attendees,
-  nextEventId,
-  nextAttendeeId,
 };
