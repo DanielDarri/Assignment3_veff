@@ -92,30 +92,54 @@ app.patch(`${baseUrl}/events/:eventId`, (req, res) => {
   const eventId = Number(req.params.eventId);
 
   if (!Number.isInteger(eventId)) {
-    return res.status(400).json({
-      message: "Event id must be valid integer",
-    });
+    return res.status(400).json({ message: "Event id must be valid integer" });
   }
 
-  const event = events.find((e) => e.id === eventId);
-
-  if (!event) {
-    return res.status(404).json({
-      message: "Event not found",
-    });
+  const eventIndex = events.findIndex((e) => e.id === eventId);
+  if (eventIndex === -1) {
+    return res.status(404).json({ message: "Event not found" });
   }
 
-  const attendeeCount = attendees.filter((attendee) => 
-    attendee.eventIds.includes(eventId)
-  ).length;
+  const { name, location, date, id } = req.body;
 
-  const eventWithCount = {
-    ...event,
-    attendeeCount,
-  };
+  if (id !== undefined) {
+    return res.status(400).json({ message: "The id field cannot be modified." });
+  }
 
-  return res.status(200).json(eventWithCount);
+  if (name === undefined && location === undefined && date === undefined) {
+    return res.status(400).json({ message: "At least one of name, location, or date must be provided." });
+  }
 
+  const updatedEvent = { ...events[eventIndex] };
+
+  if (name !== undefined) {
+    if (typeof name !== "string" || name.trim() === "") {
+      return res.status(400).json({ message: "name must be a non-empty string." });
+    }
+    updatedEvent.name = name.trim();
+  }
+
+  if (location !== undefined) {
+    if (typeof location !== "string" || location.trim() === "") {
+      return res.status(400).json({ message: "location must be a non-empty string." });
+    }
+    updatedEvent.location = location.trim();
+  }
+
+  if (date !== undefined) {
+    if (typeof date !== "string") {
+      return res.status(400).json({ message: "date must be a string." });
+    }
+    const trimmedDate = date.trim();
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(trimmedDate)) {
+      return res.status(400).json({ message: "date must be in format YYYY-MM-DD." });
+    }
+    updatedEvent.date = trimmedDate;
+  }
+
+  events[eventIndex] = updatedEvent;
+  return res.status(200).json(updatedEvent);
 });
 
 // Delete all-events request should be rejected (method not allowed)
