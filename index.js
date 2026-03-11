@@ -119,6 +119,34 @@ app.patch(`${baseUrl}/events/:eventId`, (req, res) => {
 
 });
 
+// Delete all-events request should be rejected (method not allowed)
+app.delete(`${baseUrl}/events`, (req, res) => {
+  return res.status(405).json({ message: "Method Not Allowed" });
+});
+
+// Delete a specific event
+app.delete(`${baseUrl}/events/:eventId`, (req, res) => {
+  const eventId = Number(req.params.eventId);
+
+  if (!Number.isInteger(eventId)) {
+    return res.status(400).json({ message: "Event id must be valid integer" });
+  }
+
+  const index = events.findIndex((e) => e.id === eventId);
+  if (index === -1) {
+    return res.status(404).json({ message: "Event not found" });
+  }
+
+  // ensure no attendees are registered
+  const hasAttendees = attendees.some((att) => att.eventIds.includes(eventId));
+  if (hasAttendees) {
+    return res.status(400).json({ message: "Event has registered attendees" });
+  }
+
+  const [deletedEvent] = events.splice(index, 1);
+  return res.status(200).json(deletedEvent);
+});
+
 
 /* --------------------------
 
