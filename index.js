@@ -31,7 +31,7 @@ app.use((req, res, next) => {
 });
 
 /* Initial Data */
-import {getNextEventId, getNextAttendeeId } from "./data/initialData.js";
+import { events, attendees, getNextEventId, getNextAttendeeId } from "./data/initialData.js";
 
 /* --------------------------
 
