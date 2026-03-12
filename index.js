@@ -53,7 +53,7 @@ app.post(`${baseUrl}/events`, (req, res) => {
   let { name, location, date } = req.body;
 
   if (name === undefined || location === undefined || date === undefined ||
-      typeof name !== "string" || typeof location !== "string" || typeof date !== "string") {
+    typeof name !== "string" || typeof location !== "string" || typeof date !== "string") {
     return res.status(400).json({ message: "name, location and date are required strings." });
   }
 
@@ -196,14 +196,31 @@ app.get(`${baseUrl}/attendees`, (req, res) => {
   return res.status(200).json(attendees);
 });
 
+app.get(`${baseUrl}/attendees/:attendeeId`, (req, res) => {
+  const attendeeId = Number(req.params.attendeeId);
+  if (!Number.isInteger(attendeeId)) {
+    return res.status(400).json({ message: "attendeeId must be an integer" });
+  }
+
+  const attendee = attendees.find((a)=> a.id === attendeeId);
+  if (!attendee){
+    return res.status(404).json({message: `attendee with id: ${attendeeId} does not exist`});
+  }
+  return res.status(200).json(attendee);
+});
 // Create an attendee
 app.post(`${baseUrl}/attendees`, (req, res) => {
-  let { name, email } = req.body;
+  let { name, email, eventIds } = req.body;
+
+  if (eventIds === undefined) { eventIds = []; }
 
   if (name === undefined || email === undefined) {
     return res.status(400).json({ message: "name and email are required" });
   }
 
+  if (!Array.isArray(eventIds)) {
+    return res.status(400).json({ message: "eventIds must be an Array" })
+  }
   if (typeof name !== "string" || typeof email !== "string") {
     return res.status(400).json({ message: "name and email must be strings" });
   }
@@ -220,41 +237,45 @@ app.post(`${baseUrl}/attendees`, (req, res) => {
   }
 
   const duplicate = attendees.find(
-    (a) => a.email.toLowerCase() === email.toLowerCase()
+    (a) => a.email === email
   );
   if (duplicate) {
     return res.status(400).json({ message: "an attendee with that email already exists" });
   }
 
-  const newAtt = { id: getNextAttendeeId(), name, email, eventIds: [] };
-  attendees.push(newAtt);
-  return res.status(201).json(newAtt);
+  const newAttendee = {
+    id: getNextAttendeeId(),
+    name: name,
+    email: email,
+    eventIds: eventIds
+  };
+  attendees.push(newAttendee);
+  return res.status(201).json(newAttendee);
 });
 
 // Register an attendee for an event
-app.post(`${baseUrl}/attendees/:attendeeId/events/:eventId`, (req, res) => {
+app.patch(`${baseUrl}/attendees/:attendeeId`, (req, res) => {
   const attendeeId = Number(req.params.attendeeId);
-  const eventId = Number(req.params.eventId);
-
-  if (!Number.isInteger(attendeeId) || !Number.isInteger(eventId)) {
-    return res.status(400).json({ message: "attendeeId and eventId must be integers" });
+  if (!Number.isInteger(attendeeId)) {
+    return res.status(400).json({ message: "attendeeId must be an integer" })
   }
-
   const attendee = attendees.find((a) => a.id === attendeeId);
   if (!attendee) {
     return res.status(404).json({ message: "Attendee not found" });
   }
-  const event = events.find((e) => e.id === eventId);
-  if (!event) {
-    return res.status(404).json({ message: "Event not found" });
-  }
 
-  if (attendee.eventIds.includes(eventId)) {
-    return res.status(400).json({ message: "Attendee already registered for event" });
+  let { eventIds } = req.body;
+  if (!Array.isArray(eventIds) && eventIds !== undefined) {
+    return res.status(400).json({ message: "eventIds must not be none and must be an Array" });
   }
-
-  attendee.eventIds.push(eventId);
-  return res.status(200).json(attendee);
+  for (const id of eventIds) {
+    const eventExists = events.some((e) => e.id === id);
+    if (!eventExists) {
+      return res.status(400).json({ message: `event with id: ${id} does not exist` });
+    }
+  }
+  attendee.eventIds = eventIds;
+  return res.status(200).json(attendee)
 });
 
 /* --------------------------
