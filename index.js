@@ -210,17 +210,14 @@ app.get(`${baseUrl}/attendees/:attendeeId`, (req, res) => {
 });
 // Create an attendee
 app.post(`${baseUrl}/attendees`, (req, res) => {
-  let { name, email, eventIds } = req.body;
+  let { name, email } = req.body;
 
-  if (eventIds === undefined) { eventIds = []; }
-
+  // validate name and email are present
   if (name === undefined || email === undefined) {
     return res.status(400).json({ message: "name and email are required" });
   }
 
-  if (!Array.isArray(eventIds)) {
-    return res.status(400).json({ message: "eventIds must be an Array" })
-  }
+  // validate name and email datatype
   if (typeof name !== "string" || typeof email !== "string") {
     return res.status(400).json({ message: "name and email must be strings" });
   }
@@ -228,17 +225,21 @@ app.post(`${baseUrl}/attendees`, (req, res) => {
   name = name.trim();
   email = email.trim();
 
+  //validate name and email are non-empty
   if (!name || !email) {
     return res.status(400).json({ message: "name and email must be non-empty" });
   }
 
+  //validate presence of "@" in email
   if (!email.includes("@")) {
     return res.status(400).json({ message: "email must contain @" });
   }
 
+  // check for duplicate emails
   const duplicate = attendees.find(
     (a) => a.email.toLowerCase() === email.toLowerCase()
   );
+  // throw error if duplicate is detected
   if (duplicate) {
     return res.status(400).json({ message: "an attendee with that email already exists" });
   }
@@ -277,11 +278,11 @@ app.patch(`${baseUrl}/attendees/:attendeeId/events/:eventId`, (req, res) => {
     return res.status(404).json({ message: `Event with id: ${eventId} not found` });
   }
 
+  // check for duplicate eventIds
   if (attendee.eventIds.includes(eventId)) {
     return res.status(400).json({ message: `Attendee already associated with event id ${eventId}` })
   }
   attendee.eventIds.push(eventId);
-
   return res.status(200).json(attendee)
 });
 
