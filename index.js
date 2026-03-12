@@ -202,9 +202,9 @@ app.get(`${baseUrl}/attendees/:attendeeId`, (req, res) => {
     return res.status(400).json({ message: "attendeeId must be an integer" });
   }
 
-  const attendee = attendees.find((a)=> a.id === attendeeId);
-  if (!attendee){
-    return res.status(404).json({message: `attendee with id: ${attendeeId} does not exist`});
+  const attendee = attendees.find((a) => a.id === attendeeId);
+  if (!attendee) {
+    return res.status(404).json({ message: `attendee with id: ${attendeeId} does not exist` });
   }
   return res.status(200).json(attendee);
 });
@@ -237,7 +237,7 @@ app.post(`${baseUrl}/attendees`, (req, res) => {
   }
 
   const duplicate = attendees.find(
-    (a) => a.email === email
+    (a) => a.email.toLowerCase() === email.toLowerCase()
   );
   if (duplicate) {
     return res.status(400).json({ message: "an attendee with that email already exists" });
@@ -254,27 +254,34 @@ app.post(`${baseUrl}/attendees`, (req, res) => {
 });
 
 // Register an attendee for an event
-app.patch(`${baseUrl}/attendees/:attendeeId`, (req, res) => {
+app.patch(`${baseUrl}/attendees/:attendeeId/events/:eventId`, (req, res) => {
   const attendeeId = Number(req.params.attendeeId);
+  // validate attendeeId
   if (!Number.isInteger(attendeeId)) {
     return res.status(400).json({ message: "attendeeId must be an integer" })
   }
   const attendee = attendees.find((a) => a.id === attendeeId);
+  // validate attendee
   if (!attendee) {
-    return res.status(404).json({ message: "Attendee not found" });
+    return res.status(404).json({ message: `Attendee with id: ${attendeeId} not found` });
   }
 
-  let { eventIds } = req.body;
-  if (!Array.isArray(eventIds) && eventIds !== undefined) {
-    return res.status(400).json({ message: "eventIds must not be none and must be an Array" });
+  const eventId = Number(req.params.eventId);
+  // validate eventId
+  if (!Number.isInteger(eventId)) {
+    return res.status(400).json({ message: "eventId must be an integer" })
   }
-  for (const id of eventIds) {
-    const eventExists = events.some((e) => e.id === id);
-    if (!eventExists) {
-      return res.status(400).json({ message: `event with id: ${id} does not exist` });
-    }
+  const event = events.find((e) => e.id === eventId);
+  // validate event
+  if (!event) {
+    return res.status(404).json({ message: `Event with id: ${eventId} not found` });
   }
-  attendee.eventIds = eventIds;
+
+  if (attendee.eventIds.includes(eventId)) {
+    return res.status(400).json({ message: `Attendee already associated with event id ${eventId}` })
+  }
+  attendee.eventIds.push(eventId);
+
   return res.status(200).json(attendee)
 });
 
