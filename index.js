@@ -248,7 +248,7 @@ app.post(`${baseUrl}/attendees`, (req, res) => {
     id: getNextAttendeeId(),
     name: name,
     email: email,
-    eventIds: eventIds
+    eventIds: []
   };
   attendees.push(newAttendee);
   return res.status(201).json(newAttendee);
